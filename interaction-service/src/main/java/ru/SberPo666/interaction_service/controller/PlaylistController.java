@@ -31,7 +31,7 @@ public class PlaylistController {
 
     @PostMapping("/me/playlists")
     public void createPlaylist(@AuthenticationPrincipal Jwt jwt, @RequestBody CreatePlaylistRequest request){
-        playlistService.createPlaylist(request, UUID.fromString(jwt.getClaim("user_id")));
+        playlistService.createPlaylist(request, UUID.fromString(jwt.getClaim("user_id")), UUID.randomUUID());
     }
 
     @PutMapping("/me/playlists/{playlistId}")

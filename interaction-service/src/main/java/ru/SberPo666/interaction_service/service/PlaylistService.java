@@ -1,6 +1,10 @@
 package ru.SberPo666.interaction_service.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +31,7 @@ public class PlaylistService {
     private final HistoryRepository historyRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    @Cacheable(value = "userPlaylists", key = "#userId")
     public List<GetPlaylistsResponse> getPlaylistsByUserId(UUID userId){
         return playlistRepository.getPlaylistByUserId(userId).stream()
                 .map((entity -> GetPlaylistsResponse.builder()
@@ -42,6 +47,11 @@ public class PlaylistService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "playlistById", key = "#playlistId"),
+            @CacheEvict(value = "userPlaylists", key = "#userId"),
+            @CacheEvict(value = "playlistTracksById", key = "#playlistId")
+    })
     public void deletePlaylistById(UUID userId, UUID playlistId){
         if(!playlistRepository.existsById(playlistId))
             throw new RuntimeException(String.format("Playlist with id %s does not exists", playlistId.toString()));
@@ -52,7 +62,12 @@ public class PlaylistService {
     }
 
     @Transactional
-    public void createPlaylist(CreatePlaylistRequest request, UUID userID){
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "userPlaylists", key = "#userID")
+            }
+    )
+    public void createPlaylist(CreatePlaylistRequest request, UUID userID, UUID newUUID){
 
         PlaylistEntity entity = PlaylistEntity.builder()
                 .isPublic(request.getIsPublic())
@@ -61,7 +76,7 @@ public class PlaylistService {
                 .userId(userID)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .playlistId(UUID.randomUUID())
+                .playlistId(newUUID)
                 .build();
 
         playlistRepository.save(entity);
@@ -69,28 +84,30 @@ public class PlaylistService {
     }
 
     @Transactional
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "playlistById", key = "#playlistId"),
+                    @CacheEvict(value = "userPlaylists", key = "#userId")
+            }
+    )
     public void updatePlayList(CreatePlaylistRequest request, UUID userId, UUID playlistId){
 
         if(!playlistRepository.existsById(playlistId))
             throw new RuntimeException(String.format("Playlist with id %s does not exists", playlistId.toString()));
-        PlaylistEntity entity = playlistRepository.getPlaylistById(playlistId);
-        if(!entity.getUserId().equals(userId))
+        PlaylistEntity entityToUpdate = playlistRepository.getPlaylistById(playlistId);
+        if(!entityToUpdate.getUserId().equals(userId))
             throw new RuntimeException("User does not have permission to view this playlist");
 
 
-        PlaylistEntity newEntity = PlaylistEntity.builder()
-                .isPublic(request.getIsPublic())
-                .name(request.getName())
-                .description(request.getDescription())
-                .userId(userId)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .playlistId(UUID.randomUUID())
-                .build();
+        entityToUpdate.setName(request.getName());
+        entityToUpdate.setDescription(request.getDescription());
+        entityToUpdate.setIsPublic(request.getIsPublic());
+        entityToUpdate.setUpdatedAt(LocalDateTime.now());
 
-        playlistRepository.save(newEntity);
+        playlistRepository.save(entityToUpdate);
     }
 
+    @Cacheable(value = "playlistTracksById", key = "#playlistId")
     public List<GetPlaylistTrackResponse> getTrackByPlaylistId(UUID playlistId, UUID userId){
         if(!playlistRepository.existsById(playlistId))
             throw new RuntimeException(String.format("Playlist with id %s does not exists", playlistId.toString()));
@@ -107,6 +124,11 @@ public class PlaylistService {
     }
 
     @Transactional
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "playlistTracksById", key = "#playlistId")
+            }
+    )
     public void addTrackIntoPlaylist(UUID playlistId, UUID userId, UUID trackId){
         if(!playlistRepository.existsById(playlistId))
             throw new RuntimeException(String.format("Playlist with id %s does not exists", playlistId.toString()));
@@ -129,6 +151,11 @@ public class PlaylistService {
     }
 
     @Transactional
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "playlistTracksById", key = "#playlistId")
+            }
+    )
     public void deleteTrackInPlaylist(UUID playlistId, UUID userId, UUID trackId){
         if(!playlistRepository.existsById(playlistId))
             throw new RuntimeException(String.format("Playlist with id %s does not exists", playlistId.toString()));
@@ -140,6 +167,11 @@ public class PlaylistService {
     }
 
     @Transactional
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "playlistTracksById", key = "#playlistId")
+            }
+    )
     public void changePositionsInPlaylist(List<ChangePositionInPlaylistRequest> request, UUID userId, UUID playlistId){
         if(!playlistRepository.existsById(playlistId))
             throw new RuntimeException(String.format("Playlist with id %s does not exists", playlistId.toString()));
@@ -151,6 +183,7 @@ public class PlaylistService {
         entity.getTracks().forEach(track -> track.setPosition(map.get(track.getTrackId().toString())));
         playlistRepository.save(entity);
     }
+
 
     public List<UUID> getHistory(UUID userId){
         return historyRepository.getHistoryByUserId(userId);
