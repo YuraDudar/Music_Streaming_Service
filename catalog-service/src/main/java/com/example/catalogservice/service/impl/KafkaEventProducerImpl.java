@@ -1,4 +1,5 @@
 package com.example.catalogservice.service.impl;
+
 import com.example.catalogservice.event.CatalogEvent;
 import com.example.catalogservice.event.album.AlbumCreatedEvent;
 import com.example.catalogservice.event.album.AlbumDeletedEvent;
@@ -9,6 +10,7 @@ import com.example.catalogservice.event.artist.ArtistUpdatedEvent;
 import com.example.catalogservice.event.genre.GenreCreatedEvent;
 import com.example.catalogservice.event.genre.GenreDeletedEvent;
 import com.example.catalogservice.event.genre.GenreUpdatedEvent;
+import com.example.catalogservice.event.streaming.TrackAudioSourceInfo;
 import com.example.catalogservice.event.track.TrackCreatedEvent;
 import com.example.catalogservice.event.track.TrackDeletedEvent;
 import com.example.catalogservice.event.track.TrackUpdatedEvent;
@@ -27,26 +29,25 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class KafkaEventProducerImpl implements KafkaEventProducer {
 
-    private final KafkaTemplate<String, CatalogEvent<?>> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${app.kafka.topic.tracks}")
     private String tracksTopic;
-
     @Value("${app.kafka.topic.albums}")
     private String albumsTopic;
-
     @Value("${app.kafka.topic.artists}")
     private String artistsTopic;
-
     @Value("${app.kafka.topic.genres}")
     private String genresTopic;
+    @Value("${app.kafka.topic.track-audio-sources}")
+    private String trackAudioSourcesTopic;
 
     @Override
     public void sendTrackCreatedEvent(TrackCreatedEvent payload) {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "TrackCreated", OffsetDateTime.now(),
                 payload.trackId().toString(), "Track", 1, payload);
-        log.info("Sending TrackCreatedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending TrackCreatedEvent to Kafka. Topic: {}, Event ID: {}", tracksTopic, event.eventId());
         kafkaTemplate.send(tracksTopic, event.aggregateId(), event);
     }
 
@@ -55,7 +56,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "TrackUpdated", OffsetDateTime.now(),
                 payload.trackId().toString(), "Track", 1, payload);
-        log.info("Sending TrackUpdatedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending TrackUpdatedEvent to Kafka. Topic: {}, Event ID: {}", tracksTopic, event.eventId());
         kafkaTemplate.send(tracksTopic, event.aggregateId(), event);
     }
 
@@ -64,7 +65,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "TrackDeleted", OffsetDateTime.now(),
                 payload.trackId().toString(), "Track", 1, payload);
-        log.info("Sending TrackDeletedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending TrackDeletedEvent to Kafka. Topic: {}, Event ID: {}", tracksTopic, event.eventId());
         kafkaTemplate.send(tracksTopic, event.aggregateId(), event);
     }
 
@@ -73,7 +74,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "AlbumCreated", OffsetDateTime.now(),
                 payload.albumId().toString(), "Album", 1, payload);
-        log.info("Sending AlbumCreatedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending AlbumCreatedEvent to Kafka. Topic: {}, Event ID: {}", albumsTopic, event.eventId());
         kafkaTemplate.send(albumsTopic, event.aggregateId(), event);
     }
 
@@ -82,7 +83,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "AlbumUpdated", OffsetDateTime.now(),
                 payload.albumId().toString(), "Album", 1, payload);
-        log.info("Sending AlbumUpdatedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending AlbumUpdatedEvent to Kafka. Topic: {}, Event ID: {}", albumsTopic, event.eventId());
         kafkaTemplate.send(albumsTopic, event.aggregateId(), event);
     }
 
@@ -91,7 +92,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "AlbumDeleted", OffsetDateTime.now(),
                 payload.albumId().toString(), "Album", 1, payload);
-        log.info("Sending AlbumDeletedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending AlbumDeletedEvent to Kafka. Topic: {}, Event ID: {}", albumsTopic, event.eventId());
         kafkaTemplate.send(albumsTopic, event.aggregateId(), event);
     }
 
@@ -100,7 +101,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "ArtistCreated", OffsetDateTime.now(),
                 payload.artistId().toString(), "Artist", 1, payload);
-        log.info("Sending ArtistCreatedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending ArtistCreatedEvent to Kafka. Topic: {}, Event ID: {}", artistsTopic, event.eventId());
         kafkaTemplate.send(artistsTopic, event.aggregateId(), event);
     }
 
@@ -109,7 +110,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "ArtistUpdated", OffsetDateTime.now(),
                 payload.artistId().toString(), "Artist", 1, payload);
-        log.info("Sending ArtistUpdatedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending ArtistUpdatedEvent to Kafka. Topic: {}, Event ID: {}", artistsTopic, event.eventId());
         kafkaTemplate.send(artistsTopic, event.aggregateId(), event);
     }
 
@@ -118,7 +119,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "ArtistDeleted", OffsetDateTime.now(),
                 payload.artistId().toString(), "Artist", 1, payload);
-        log.info("Sending ArtistDeletedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending ArtistDeletedEvent to Kafka. Topic: {}, Event ID: {}", artistsTopic, event.eventId());
         kafkaTemplate.send(artistsTopic, event.aggregateId(), event);
     }
 
@@ -127,7 +128,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "GenreCreated", OffsetDateTime.now(),
                 payload.genreId().toString(), "Genre", 1, payload);
-        log.info("Sending GenreCreatedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending GenreCreatedEvent to Kafka. Topic: {}, Event ID: {}", genresTopic, event.eventId());
         kafkaTemplate.send(genresTopic, event.aggregateId(), event);
     }
 
@@ -136,7 +137,7 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "GenreUpdated", OffsetDateTime.now(),
                 payload.genreId().toString(), "Genre", 1, payload);
-        log.info("Sending GenreUpdatedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending GenreUpdatedEvent to Kafka. Topic: {}, Event ID: {}", genresTopic, event.eventId());
         kafkaTemplate.send(genresTopic, event.aggregateId(), event);
     }
 
@@ -145,7 +146,13 @@ public class KafkaEventProducerImpl implements KafkaEventProducer {
         var event = new CatalogEvent<>(
                 UUID.randomUUID(), "GenreDeleted", OffsetDateTime.now(),
                 payload.genreId().toString(), "Genre", 1, payload);
-        log.info("Sending GenreDeletedEvent to Kafka. Event ID: {}", event.eventId());
+        log.info("Sending GenreDeletedEvent to Kafka. Topic: {}, Event ID: {}", genresTopic, event.eventId());
         kafkaTemplate.send(genresTopic, event.aggregateId(), event);
+    }
+
+    @Override
+    public void sendTrackAudioSourceInfo(TrackAudioSourceInfo payload) {
+        log.info("Sending TrackAudioSourceInfo to Kafka. Topic: {}, Payload: {}", trackAudioSourcesTopic, payload);
+        kafkaTemplate.send(trackAudioSourcesTopic, payload.trackId(), payload);
     }
 }

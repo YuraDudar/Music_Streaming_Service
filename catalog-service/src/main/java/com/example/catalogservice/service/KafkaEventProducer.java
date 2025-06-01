@@ -3,6 +3,7 @@ package com.example.catalogservice.service;
 import com.example.catalogservice.event.album.AlbumCreatedEvent;
 import com.example.catalogservice.event.album.AlbumDeletedEvent;
 import com.example.catalogservice.event.album.AlbumUpdatedEvent;
+import com.example.catalogservice.event.streaming.TrackAudioSourceInfo;
 import com.example.catalogservice.event.artist.ArtistCreatedEvent;
 import com.example.catalogservice.event.artist.ArtistUpdatedEvent;
 import com.example.catalogservice.event.artist.ArtistDeletedEvent;
@@ -23,7 +24,7 @@ public interface KafkaEventProducer {
     void sendAlbumCreatedEvent(AlbumCreatedEvent payload);
     void sendAlbumUpdatedEvent(AlbumUpdatedEvent payload);
     void sendAlbumDeletedEvent(AlbumDeletedEvent payload);
-
+    void sendTrackAudioSourceInfo(TrackAudioSourceInfo payload);
     void sendArtistCreatedEvent(ArtistCreatedEvent payload);
     void sendArtistUpdatedEvent(ArtistUpdatedEvent payload);
     void sendArtistDeletedEvent(ArtistDeletedEvent payload);

@@ -8,6 +8,7 @@ import com.example.catalogservice.entity.AlbumEntity;
 import com.example.catalogservice.entity.ArtistEntity;
 import com.example.catalogservice.entity.GenreEntity;
 import com.example.catalogservice.entity.TrackEntity;
+import com.example.catalogservice.event.streaming.TrackAudioSourceInfo;
 import com.example.catalogservice.event.track.TrackCreatedEvent;
 import com.example.catalogservice.event.track.TrackDeletedEvent;
 import com.example.catalogservice.event.track.TrackUpdatedEvent;
@@ -91,7 +92,7 @@ public class TrackServiceImpl implements TrackService {
         TrackEntity savedTrack = trackRepository.save(trackEntity);
         log.info("Track created successfully with id: {}", savedTrack.getId());
 
-        TrackCreatedEvent eventPayload = new TrackCreatedEvent(
+        TrackCreatedEvent mainEventPayload = new TrackCreatedEvent(
                 savedTrack.getId(),
                 savedTrack.getTitle(),
                 savedTrack.getDurationMs(),
@@ -103,7 +104,14 @@ public class TrackServiceImpl implements TrackService {
                 savedTrack.getArtists().stream().map(a -> new TrackCreatedEvent.ArtistInfo(a.getId(), a.getName())).collect(Collectors.toSet()),
                 savedTrack.getGenres().stream().map(g -> new TrackCreatedEvent.GenreInfo(g.getId(), g.getName())).collect(Collectors.toSet())
         );
-        kafkaEventProducer.sendTrackCreatedEvent(eventPayload);
+        kafkaEventProducer.sendTrackCreatedEvent(mainEventPayload);
+
+        TrackAudioSourceInfo streamingPayload = new TrackAudioSourceInfo(
+                savedTrack.getId().toString(),
+                savedTrack.getAudioFileS3Key(),
+                "CREATED"
+        );
+        kafkaEventProducer.sendTrackAudioSourceInfo(streamingPayload);
 
         return trackMapper.toResponse(savedTrack);
     }
@@ -131,14 +139,9 @@ public class TrackServiceImpl implements TrackService {
         if (!albumRepository.existsById(albumId)) {
             throw new ResourceNotFoundException("Album not found with id: " + albumId);
         }
-        // TODO: Нужен кастомный метод в TrackRepository для поиска по albumId с пагинацией
-        // return trackRepository.findByAlbumId(albumId, pageable).stream()
-        //        .map(trackMapper::toSummaryDto)
-        //        .collect(Collectors.toList());
-        // Пока заглушка:
-        return trackRepository.findAll(pageable).getContent().stream() // Неправильно, просто для компиляции
-                .filter(t -> t.getAlbum().getId().equals(albumId))
-                .map(trackMapper::toSummaryDto).collect(Collectors.toList());
+        return trackRepository.findByAlbum_Id(albumId, pageable).stream()
+                .map(trackMapper::toSummaryDto)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -148,14 +151,9 @@ public class TrackServiceImpl implements TrackService {
         if (!artistRepository.existsById(artistId)) {
             throw new ResourceNotFoundException("Artist not found with id: " + artistId);
         }
-        // TODO: Нужен кастомный метод в TrackRepository для поиска по artistId (через track_artists) с пагинацией
-        // return trackRepository.findByArtists_Id(artistId, pageable).stream()
-        //        .map(trackMapper::toSummaryDto)
-        //        .collect(Collectors.toList());
-        // Пока заглушка:
-        return trackRepository.findAll(pageable).getContent().stream() // Неправильно, просто для компиляции
-                .filter(t -> t.getArtists().stream().anyMatch(a -> a.getId().equals(artistId)))
-                .map(trackMapper::toSummaryDto).collect(Collectors.toList());
+        return trackRepository.findByArtists_Id(artistId, pageable).stream()
+                .map(trackMapper::toSummaryDto)
+                .collect(Collectors.toList());
     }
 
 
@@ -186,15 +184,14 @@ public class TrackServiceImpl implements TrackService {
                             .orElseThrow(() -> new ResourceNotFoundException("Genre not found with id: " + id)))
                     .collect(Collectors.toSet());
             existingTrack.setGenres(genres);
-        } else if (updateRequest.genreIds() != null && updateRequest.genreIds().isEmpty()) { // Если передан пустой список, очищаем жанры
+        } else if (updateRequest.genreIds() != null && updateRequest.genreIds().isEmpty()) {
             existingTrack.setGenres(new HashSet<>());
         }
-
 
         TrackEntity updatedTrack = trackRepository.save(existingTrack);
         log.info("Track updated successfully with id: {}", updatedTrack.getId());
 
-        TrackUpdatedEvent eventPayload = new TrackUpdatedEvent(
+        TrackUpdatedEvent mainEventPayload = new TrackUpdatedEvent(
                 updatedTrack.getId(),
                 updatedTrack.getTitle(),
                 updatedTrack.getDurationMs(),
@@ -206,7 +203,14 @@ public class TrackServiceImpl implements TrackService {
                 updatedTrack.getArtists().stream().map(a -> new TrackCreatedEvent.ArtistInfo(a.getId(), a.getName())).collect(Collectors.toSet()),
                 updatedTrack.getGenres().stream().map(g -> new TrackCreatedEvent.GenreInfo(g.getId(), g.getName())).collect(Collectors.toSet())
         );
-        kafkaEventProducer.sendTrackUpdatedEvent(eventPayload);
+        kafkaEventProducer.sendTrackUpdatedEvent(mainEventPayload);
+
+        TrackAudioSourceInfo streamingPayload = new TrackAudioSourceInfo(
+                updatedTrack.getId().toString(),
+                updatedTrack.getAudioFileS3Key(),
+                "UPDATED"
+        );
+        kafkaEventProducer.sendTrackAudioSourceInfo(streamingPayload);
 
         return trackMapper.toResponse(updatedTrack);
     }
@@ -218,10 +222,19 @@ public class TrackServiceImpl implements TrackService {
         TrackEntity trackEntity = trackRepository.findById(trackId)
                 .orElseThrow(() -> new ResourceNotFoundException("Track not found with id: " + trackId));
 
+        String s3KeyForEvent = trackEntity.getAudioFileS3Key();
+
         trackRepository.deleteById(trackId);
         log.info("Track deleted successfully with id: {}", trackId);
 
-        TrackDeletedEvent eventPayload = new TrackDeletedEvent(trackId);
-        kafkaEventProducer.sendTrackDeletedEvent(eventPayload);
+        TrackDeletedEvent mainEventPayload = new TrackDeletedEvent(trackId);
+        kafkaEventProducer.sendTrackDeletedEvent(mainEventPayload);
+
+        TrackAudioSourceInfo streamingPayload = new TrackAudioSourceInfo(
+                trackId.toString(),
+                null,
+                "DELETED"
+        );
+        kafkaEventProducer.sendTrackAudioSourceInfo(streamingPayload);
     }
 }
