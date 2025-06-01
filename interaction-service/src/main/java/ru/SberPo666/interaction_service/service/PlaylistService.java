@@ -10,6 +10,7 @@ import ru.SberPo666.interaction_service.controller.request.ChangePositionInPlayl
 import ru.SberPo666.interaction_service.controller.request.CreatePlaylistRequest;
 import ru.SberPo666.interaction_service.controller.response.GetPlaylistTrackResponse;
 import ru.SberPo666.interaction_service.controller.response.GetPlaylistsResponse;
+import ru.SberPo666.interaction_service.repository.HistoryRepository;
 import ru.SberPo666.interaction_service.repository.PlaylistRepository;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 public class PlaylistService {
 
     private final PlaylistRepository playlistRepository;
+    private final HistoryRepository historyRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     public List<GetPlaylistsResponse> getPlaylistsByUserId(UUID userId){
@@ -148,6 +150,10 @@ public class PlaylistService {
         PlaylistEntity entity = playlistRepository.getPlaylistById(playlistId);
         entity.getTracks().forEach(track -> track.setPosition(map.get(track.getTrackId().toString())));
         playlistRepository.save(entity);
+    }
+
+    public List<UUID> getHistory(UUID userId){
+        return historyRepository.getHistoryByUserId(userId);
     }
 
 }

@@ -59,4 +59,9 @@ public class PlaylistController {
         playlistService.changePositionsInPlaylist(request, UUID.fromString(jwt.getClaim("user_id")), UUID.fromString(playlistId));
     }
 
+    @GetMapping("/me/histoyr")
+    public List<UUID> getHistory(@AuthenticationPrincipal Jwt jwt){
+        return playlistService.getHistory(jwt.getClaim("user_id"));
+    }
+
 }
