@@ -31,7 +31,7 @@ public interface PlaylistRepository extends JpaRepository<PlaylistEntity, UUID> 
 
     @Query(value =
             """
-            Select position from playlist_tracks where playlist_id = :playlistId order by position desc
+            Select position from playlist_tracks where playlist_id = :playlistId order by position desc limit 1
             """,
             nativeQuery = true)
     @Cacheable(value = "playlistLastPosition", key = "#playlistId")
