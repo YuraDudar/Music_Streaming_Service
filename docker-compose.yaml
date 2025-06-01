@@ -2,43 +2,37 @@ version: '3.8'
 
 services:
   prometheus:
-    image: prom/prometheus:v2.51.0 # Рекомендуется использовать конкретную версию
+    image: prom/prometheus:v2.51.0
     container_name: prometheus
-    # Монтирование конфигурационного файла и тома для данных
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml # Локальный файл в контейнер
-      - prometheus_data:/prometheus                               # Именованный том для данных Prometheus
-    # Команды для запуска Prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle' # Для перезагрузки конфигурации без перезапуска контейнера
+      - '--web.enable-lifecycle'
     ports:
-      - "9090:9090" # Проброс порта для доступа к UI Prometheus
+      - "9090:9090"
     networks:
-      - monitoring_network # Подключение к сети 'monitoring_network'
-    restart: unless-stopped # Политика перезапуска
+      - monitoring_network
+    restart: unless-stopped
 
   grafana:
-    image: grafana/grafana-oss:10.4.1 # Рекомендуется использовать конкретную версию
+    image: grafana/grafana-oss:10.4.1
     container_name: grafana
     ports:
-      - "3000:3000" # Проброс порта для доступа к UI Grafana
+      - "3000:3000"
     volumes:
-      - grafana_data:/var/lib/grafana # Именованный том для данных Grafana
-      # Опционально: для автоматической настройки Data Sources и Dashboards
-      # - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-      # - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana_data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin # !!! ВАЖНО: Смените этот пароль для продакшена !!!
-      # - GF_INSTALL_PLUGINS= # Если нужны какие-либо плагины Grafana
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
-      - prometheus # Grafana запустится после Prometheus (не гарантирует готовность, но помогает с порядком)
+      - prometheus
     networks:
-      - monitoring_network # Подключение к той же сети
+      - monitoring_network
     restart: unless-stopped
   # PostgreSQL
   postgres:
