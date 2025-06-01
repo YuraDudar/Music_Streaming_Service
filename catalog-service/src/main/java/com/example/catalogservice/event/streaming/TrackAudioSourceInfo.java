@@ -1,4 +1,4 @@
-package com.example.catalogservice.event.streaming; // Замените на ваш пакет
+package com.example.catalogservice.event.streaming;
 
 public record TrackAudioSourceInfo(
         String trackId,
