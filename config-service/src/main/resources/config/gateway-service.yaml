@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - TokenRelay
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: dummy-service
+          uri: lb://dummy-service
+          predicates:
+            - Path=/dummy-service/**
+          filters:
+            - StripPrefix=1
+        - id: streaming-service
+          uri: lb://streaming-service
+          predicates:
+            - Path=/streaming-service/**
+          filters:
+            - StripPrefix=1
+        - id: interaction-service
+          uri: lb://interaction-service
+          predicates:
+            - Path=/interaction-service/**
+          filters:
+            - StripPrefix=1
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9002
+      client:
+        registration:
+          oauth2-client:
+            provider: security-provider
+            client-id: my-client-id
+            client-secret: my-client-secret
+            authorization-grant-type: authorization_code
+            scope: read_data, write_data, admin_api
+        provider:
+          security-provider:
+            issuer-uri: http://localhost:9002
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    gateway:
+      enabled: true
+  tracing:
+    enabled: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

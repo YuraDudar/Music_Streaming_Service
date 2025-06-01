@@ -1,0 +1,36 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: metric-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: metrics-processor-group-v1
+  clickhouse:
+    datasource:
+      url: jdbc:clickhouse://localhost:8123/default
+      username: default
+      password: ""
+      driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+      hikari:
+        connection-timeout: 30000
+        maximum-pool-size: 10
+        minimum-idle: 2
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+
+metrics:
+  kafka:
+    topic: track-metrics-topic
