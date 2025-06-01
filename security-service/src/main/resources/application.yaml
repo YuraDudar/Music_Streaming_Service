@@ -1,5 +1,0 @@
-spring:
-  application:
-    name: security-service
-  config:
-    import: configserver:http://localhost:8888

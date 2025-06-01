@@ -1,0 +1,52 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: search-service
+  elasticsearch:
+    uris: http://${ELASTICSEARCH_HOST:localhost}:${ELASTICSEARCH_PORT:9200}
+    # username: ${ELASTICSEARCH_USERNAME:}
+    # password: ${ELASTICSEARCH_PASSWORD:}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: search-service-consumer-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.catalogservice.event.*"
+        spring.json.use.type.headers: "false"
+
+app:
+  kafka:
+    topic:
+      tracks: "catalog.tracks.v1"
+      albums: "catalog.albums.v1"
+      artists: "catalog.artists.v1"
+      genres: "catalog.genres.v1"
+  elasticsearch:
+    index:
+      tracks: "tracks_idx_v1"
+      albums: "albums_idx_v1"
+      artists: "artists_idx_v1"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    root: INFO
+    com.searchservice.proj: DEBUG
+    org.springframework.data.elasticsearch.client: TRACE
+    org.elasticsearch.client: DEBUG
