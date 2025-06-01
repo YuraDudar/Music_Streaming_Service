@@ -1,6 +1,45 @@
 version: '3.8'
 
 services:
+  prometheus:
+    image: prom/prometheus:v2.51.0 # Рекомендуется использовать конкретную версию
+    container_name: prometheus
+    # Монтирование конфигурационного файла и тома для данных
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml # Локальный файл в контейнер
+      - prometheus_data:/prometheus                               # Именованный том для данных Prometheus
+    # Команды для запуска Prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle' # Для перезагрузки конфигурации без перезапуска контейнера
+    ports:
+      - "9090:9090" # Проброс порта для доступа к UI Prometheus
+    networks:
+      - monitoring_network # Подключение к сети 'monitoring_network'
+    restart: unless-stopped # Политика перезапуска
+
+  grafana:
+    image: grafana/grafana-oss:10.4.1 # Рекомендуется использовать конкретную версию
+    container_name: grafana
+    ports:
+      - "3000:3000" # Проброс порта для доступа к UI Grafana
+    volumes:
+      - grafana_data:/var/lib/grafana # Именованный том для данных Grafana
+      # Опционально: для автоматической настройки Data Sources и Dashboards
+      # - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      # - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin # !!! ВАЖНО: Смените этот пароль для продакшена !!!
+      # - GF_INSTALL_PLUGINS= # Если нужны какие-либо плагины Grafana
+    depends_on:
+      - prometheus # Grafana запустится после Prometheus (не гарантирует готовность, но помогает с порядком)
+    networks:
+      - monitoring_network # Подключение к той же сети
+    restart: unless-stopped
   # PostgreSQL
   postgres:
     image: postgres:latest
@@ -90,7 +129,11 @@ volumes:
   minio_data:
   clickhouse_data:
   redis_data:
+  prometheus_data: {}
+  grafana_data: {}
 
 networks:
   app_network:
+    driver: bridge
+  monitoring_network:
     driver: bridge

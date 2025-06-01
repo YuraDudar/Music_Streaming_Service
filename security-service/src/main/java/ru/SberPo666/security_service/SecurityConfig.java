@@ -107,8 +107,8 @@ public class SecurityConfig {
         RegisteredClient existingClient = registeredClientRepository.findByClientId(clientId);
         if (existingClient == null) {
             RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientId(clientId)
-                    .clientSecret(passwordEncoder.encode(clientSecret))
+                    .clientId("clientId")
+                    .clientSecret(passwordEncoder.encode("clientSecret"))
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                     .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)

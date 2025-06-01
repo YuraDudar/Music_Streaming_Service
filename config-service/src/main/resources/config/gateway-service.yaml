@@ -23,6 +23,12 @@ spring:
             - Path=/streaming-service/**
           filters:
             - StripPrefix=1
+        - id: interaction-service
+          uri: lb://interaction-service
+          predicates:
+            - Path=/interaction-service/**
+          filters:
+            - StripPrefix=1
   security:
     oauth2:
       resourceserver:

@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 8088
 
 spring:
   datasource:
@@ -22,7 +22,7 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: streaming-service
+      group-id: interaction-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
