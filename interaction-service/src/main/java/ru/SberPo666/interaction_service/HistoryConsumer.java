@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RequiredArgsConstructor
+@Component
 public class HistoryConsumer {
 
     HistoryRepository historyRepository;
