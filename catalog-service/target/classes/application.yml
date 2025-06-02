@@ -1,0 +1,81 @@
+server:
+  port: 8081 
+
+spring:
+  application:
+    name: catalog-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:catalog_db_dev} 
+    username: ${DB_USER:your_db_user}       
+    password: ${DB_PASSWORD:your_db_password}  
+    driver-class-name: org.postgresql.Driver
+    hikari: 
+      connection-timeout: 30000 
+      idle-timeout: 600000    
+      max-lifetime: 1800000   
+      maximum-pool-size: 10   
+      minimum-idle: 5         
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true       
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+
+    open-in-view: false 
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer 
+
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION:eu-central-1}   
+    credentials:
+ 
+      access-key: ${AWS_ACCESS_KEY_ID:}  
+      secret-key: ${AWS_SECRET_ACCESS_KEY:} 
+    s3:
+      endpoint: ${AWS_S3_ENDPOINT_URL:}  
+      
+      bucket-name: ${AWS_S3_BUCKET_NAME:your-music-files-bucket} 
+
+app:
+  kafka:
+    topic:
+      tracks: "catalog.tracks.v1"  
+      albums: "catalog.albums.v1"
+      artists: "catalog.artists.v1"
+      genres: "catalog.genres.v1"
+      track-audio-sources: "catalog.track-audio-sources.v1"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,env,configprops,mappings,beans 
+  endpoint:
+    health:
+      show-details: always 
+      
+  metrics:
+    tags: 
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true 
+
+logging:
+  level:
+    root: INFO
+    com.example.catalogservice: DEBUG 
+    org.springframework.web: INFO
+    org.springframework.kafka: INFO
+    org.hibernate.SQL: DEBUG   
+    org.hibernate.type.descriptor.sql: TRACE 
